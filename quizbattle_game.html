@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizBattle: Прокачанная версия</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #0f0c1b;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .card {
+            background-color: #1a162e;
+            border: 2px solid #3d356b;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 600px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            color: #00f2fe;
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            color: #8b83ba;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* Кнопки меню */
+        .btn-menu {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 12px 0;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        .btn-menu:active { transform: scale(0.98); }
+        .btn-easy { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+        .btn-medium { background: linear-gradient(135deg, #f1c40f, #f39c12); }
+        .btn-hard { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .btn-restart { background: linear-gradient(135deg, #00f2fe, #4facfe); color: #1a162e; }
+
+        /* Таймер */
+        .timer-container {
+            width: 100%;
+            height: 8px;
+            background-color: #251f42;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .timer-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #00f2fe, #4facfe);
+            transition: width 1s linear;
+        }
+
+        .timer-text {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ff4a5a;
+            margin-bottom: 10px;
+        }
+
+        /* Игровой экран */
+        .progress {
+            color: #8b83ba;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .question-text {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 30px;
+            min-height: 70px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Кнопки Kahoot */
+        .answers-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 480px) {
+            .answers-grid { grid-template-columns: 1fr; }
+        }
+
+        .btn-answer {
+            border: none;
+            border-radius: 12px;
+            padding: 25px 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            min-height: 90px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.2s, transform 0.1s, opacity 0.2s;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+        }
+
+        .btn-answer:active { transform: scale(0.98); }
+
+        /* Базовые цвета Kahoot */
+        .btn-answer.red { background-color: #e21b3c; }
+        .btn-answer.blue { background-color: #1368ce; }
+        .btn-answer.yellow { background-color: #d89e00; }
+        .btn-answer.green { background-color: #26890c; }
+
+        /* Классы подсветки ответов */
+        .btn-answer.correct-highlight {
+            background-color: #2ecc71 !important;
+            box-shadow: 0 0 15px #2ecc71;
+        }
+
+        .btn-answer.wrong-highlight {
+            background-color: #e74c3c !important;
+            opacity: 0.6;
+        }
+
+        .btn-answer.fade-out {
+            opacity: 0.3;
+        }
+
+        /* Результаты */
+        .result-score {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #00f2fe;
+            margin: 20px 0;
+        }
+
+        .result-comment {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>QuizBattle</h1>
+        <p class="subtitle">Викторина «Инструменты для стройки»</p>
+
+        <!-- ЭКРАН 1: Меню -->
+        <div id="menu-screen" class="screen active">
+            <p style="margin-bottom: 20px; color: #e0e0e0;">Выберите уровень сложности (на ответ даётся 15 секунд):</p>
+            <button class="btn-menu btn-easy" onclick="startGame('easy')">Легкий</button>
+            <button class="btn-menu btn-medium" onclick="startGame('medium')">Средний</button>
+            <button class="btn-menu btn-hard" onclick="startGame('hard')">Сложный</button>
+        </div>
+
+        <!-- ЭКРАН 2: Игра -->
+        <div id="game-screen" class="screen">
+            <div class="timer-text" id="timer-text">15</div>
+            <div class="timer-container">
+                <div class="timer-bar" id="timer-bar"></div>
+            </div>
+            <div class="progress">Вопрос <span id="current-question-num">1</span> из 5</div>
+            <div class="question-text" id="question-text">Загрузка...</div>
+            <div class="answers-grid" id="answers-grid">
+                <button class="btn-answer red" onclick="submitAnswer(0)" id="btn-0">Вариант 1</button>
+                <button class="btn-answer blue" onclick="submitAnswer(1)" id="btn-1">Вариант 2</button>
+                <button class="btn-answer yellow" onclick="submitAnswer(2)" id="btn-2">Вариант 3</button>
+                <button class="btn-answer green" onclick="submitAnswer(3)" id="btn-3">Вариант 4</button>
+            </div>
+        </div>
+
+        <!-- ЭКРАН 3: Финал -->
+        <div id="result-screen" class="screen">
+            <div class="progress">Игра окончена</div>
+            <div class="result-score" id="result-score">0 из 5</div>
+            <div class="result-comment" id="result-comment">...</div>
+            <button class="btn-menu btn-restart" onclick="showMenu()">Играть снова</button>
+        </div>
+    </div>
+
+    <script>
+        // Синтезатор звуков на Web Audio API (без внешних файлов)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'correct') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'tick') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+            } else if (type === 'victory') {
+                osc.type = 'square';
+                const notes = [261.63, 329.63, 392.00, 523.25];
+                notes.forEach((f, i) => {
+                    const oscN = audioCtx.createOscillator();
+                    const gainN = audioCtx.createGain();
+                    oscN.type = 'triangle';
+                    oscN.frequency.setValueAtTime(f, audioCtx.currentTime + i * 0.1);
+                    oscN.connect(gainN); gainN.connect(audioCtx.destination);
+                    gainN.gain.setValueAtTime(0.2, audioCtx.currentTime + i * 0.1);
+                    gainN.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.1 + 0.3);
+                    oscN.start(audioCtx.currentTime + i * 0.1);
+                    oscN.stop(audioCtx.currentTime + i * 0.1 + 0.3);
+                });
+            }
+        }
+
+        // Вопросы
+        const questionsData = {
+            easy: [
+                { q: "Какой инструмент чаще всего используют для забивания гвоздей?", a: ["Отвертка", "Молоток", "Плоскогубцы", "Пила"], correct: 1 },
+                { q: "С помощью какого инструмента измеряют длину стен и материалов?", a: ["Строительная рулетка", "Транспортир", "Уровень", "Штангенциркуль"], correct: 0 },
+                { q: "Какой ручной инструмент используется для закручивания винтов и шурупов?", a: ["Гаечный ключ", "Стамеска", "Отвертка", "Зубило"], correct: 2 },
+                { q: "Чем пилят деревянные доски вручную?", a: ["Ножовкой по дереву", "Болгаркой", "Резаком", "Ножницами по металлу"], correct: 0 },
+                { q: "Для чего на стройке используется обычный мастерок (кельма)?", a: ["Для забивания дюбелей", "Для укладки и разравнивания раствора", "Для зачистки проводов", "Для сверления бетона"], correct: 1 }
+            ],
+            medium: [
+                { q: "Какой электроинструмент совмещает функции сверления и быстрого монтажа саморезов?", a: ["Перфоратор", "Шуруповерт", "Лобзик", "Строительный фен"], correct: 1 },
+                { q: "Что используют строители, чтобы проверить идеальную горизонтальность поверхности?", a: ["Строительный уровень", "Отвес", "Правило", "Малку"], correct: 0 },
+                { q: "Как официально называется инструмент, который в обиходе называют «болгаркой»?", a: ["Эксцентриковая шлифмашина", "Угловая шлифовальная машина", "Ленточная пила", "Штроборез"], correct: 1 },
+                { q: "Каким инструментом делают фигурные и криволинейные пропилы в фанере или ламинате?", a: ["Циркулярная пила", "Электрический лобзик", "Сабельная пила", "Цепная пила"], correct: 1 },
+                { q: "Для чего применяется строительный отвес?", a: ["Для измерения веса мешков с цементом", "Для проверки вертикальности линий и стен", "Для замешивания финишной шпаклевки", "Для нанесения плиточного клея"], correct: 1 }
+            ],
+            hard: [
+                { q: "Какой инструмент необходим для проделывания глубоких отверстий в прочном бетоне волновым методом?", a: ["Ударная дрель", "Перфоратор", "Реноватор", "Фрезер"], correct: 1 },
+                { q: "Как называется ручной инструмент для переноса и измерения углов при разметке стропил?", a: ["Малка", "Стусло", "Рейсмус", "Штангенциркуль"], correct: 0 },
+                { q: "Какой инструмент используется для точного распила досок строго под заданным углом (например, 45°)?", a: ["Торцовочная пила или стусло", "Сабельная пила", "Ленточный станок", "Плазморез"], correct: 0 },
+                { q: "Для чего строители используют многофункциональный инструмент реноватор (МФИ)?", a: ["Для точечной резки и шлифовки в узких местах", "Для быстрого демонтажа несущих стен", "Для автоматического замешивания смесей", "Для лазерного сканирования пола"], correct: 0 },
+                { q: "Какой тип лазерного нивелира проецирует плоскости сразу на 360 градусов вокруг себя?", a: ["Точечный", "Ротационный или 3D-лазер", "Линейный статический", "Оптический теодолит"], correct: 1 }
+            ]
+        };
+
+        let currentQuestions = [];
+        let currentQuestionIdx = 0;
+        let score = 0;
+        let timeLeft = 15;
+        let timerInterval = null;
+        let isAnsweringBlocked = false;
+
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function startGame(difficulty) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            currentQuestions = questionsData[difficulty];
+            currentQuestionIdx = 0;
+            score = 0;
+            switchScreen('game-screen');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            isAnsweringBlocked = false;
+            const currentQ = currentQuestions[currentQuestionIdx];
+            
+            document.getElementById('current-question-num').innerText = currentQuestionIdx + 1;
+            document.getElementById('question-text').innerText = currentQ.q;
+            
+            for (let i = 0; i < 4; i++) {
+                const btn = document.getElementById(`btn-${i}`);
+                btn.innerText = currentQ.a[i];
+                btn.className = `btn-answer ${['red', 'blue', 'yellow', 'green'][i]}`; // сброс стилей анимации
+            }
+
+            resetAndStartTimer();
+        }
+
+        function resetAndStartTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 15;
+            updateTimerUI();
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerUI();
+
+                if (timeLeft <= 3 && timeLeft > 0) {
+                    playSound('tick');
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeOut();
+                }
+            }, 1000);
+        }
+
+        function updateTimerUI() {
+            document.getElementById('timer-text').innerText = timeLeft;
+            const percentage = (timeLeft / 15) * 100;
+            document.getElementById('timer-bar').style.width = `${percentage}%`;
+        }
+
+        function handleTimeOut() {
+            playSound('wrong');
+            highlightAnswers(-1); // никто не выбран
+            goToNextQuestionWithDelay();
+        }
+
+        function submitAnswer(selectedIdx) {
+            if (isAnsweringBlocked) return;
+            isAnsweringBlocked = true;
+            clearInterval(timerInterval);
+
+            const currentQ = currentQuestions[currentQuestionIdx];
+            
+            if (selectedIdx === currentQ.correct) {
+                score++;
+                playSound('correct');
+            } else {
+                playSound('wrong');
+            }
+
+            highlightAnswers(selectedIdx);
+            goToNextQuestionWithDelay();
+        }
+
+        function highlightAnswers(selectedIdx) {
+            const correctIdx = currentQuestions[currentQuestionIdx].correct;
+
+            for (let i = 0; i < 4; i++) {
+                const btn = document.getElementById(`btn-${i}`);
+                if (i === correctIdx) {
+                    btn.classList.add('correct-highlight');
+                } else if (i === selectedIdx) {
+                    btn.classList.add('wrong-highlight');
+                } else {
+                    btn.classList.add('fade-out');
+                }
+            }
+        }
+
+        function goToNextQuestionWithDelay() {
+            currentQuestionIdx++;
+            setTimeout(() => {
+                if (currentQuestionIdx < 5) {
+                    renderQuestion();
+                } else {
+                    showResults();
+                }
+            }, 1500); // 1.5 секунды задержки для просмотра результата
+        }
+
+        function showResults() {
+            switchScreen('result-screen');
+            document.getElementById('result-score').innerText = `${score} из 5`;
+            playSound('victory');
+            
+            let comment = "";
+            if (score === 5) comment = "Идеально! Вы настоящий прораб! 🛠️";
+            else if (score >= 3) comment = "Хороший результат! Инструменты вы знаете. 👍";
+            else comment = "Стоит немного подучить матчасть! 📖";
+            
+            document.getElementById('result-comment').innerText = comment;
+        }
+
+        function showMenu() {
+            switchScreen('menu-screen');
+        }
+    </script>
+</body>
+</html>
